@@ -1,5 +1,5 @@
 BITS 32
-; Windows x86 null-free bindshell for Windows 5.0-6.0 all service packs.
+; Windows x86 null-free bindshell for Windows 5.0-7.0 all service packs.
 ; (See http://skypher.com/wiki/index.php/Hacking/Shellcode/Bind/NGS).
 ; Based largely on code and ideas (C) 2005 by Dafydd Stuttard, NGS Software.
 ; (See http://www.ngssoftware.com/papers/WritingSmallShellcode.pdf).
