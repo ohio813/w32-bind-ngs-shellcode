@@ -8,30 +8,30 @@ def LoadExports(module_name):
     exports.append(export)
   return exports
 
-def GetHash(s, x, y):
-  (AL, AH) = (0, y)
+def GetHash(s, xor, start):
+  (AL, AH) = (0, start)
   for c in (s+"\0"):
     AL = ord(c)
-    AL ^= x
+    AL ^= xor
     AH -= AL
     AH &= 0xFF
   return AH
 
-def ReportHashes(procs, hash, x, y):
-  print '%-39s equ 0x%02X' % ("hash_xor_value", x)
-  print '%-39s equ 0x%02X' % ("hash_start_value", y)
+def ReportHashes(procs, hash, xor, start):
+  print '%-39s equ 0x%02X' % ("hash_xor_value", xor)
+  print '%-39s equ 0x%02X' % ("hash_start_value", start)
   for proc in procs:
     (module, function) = proc.split(".");
-    proc_hash = hash(function, x, y)
+    proc_hash = hash(function, xor, start)
     equ_name = "hash_%s_%s" % (module, function)
     print '%-39s equ 0x%02X' % (equ_name, proc_hash)
 
-def CheckHashes(exports, procs, hash, x, y, report_failures = False):
+def CheckHashes(exports, procs, hash, xor, start, report_failures = False):
   for proc in procs:
     (module, function) = proc.split(".");
-    proc_hash = hash(function, x, y)
+    proc_hash = hash(function, xor, start)
     for export in exports[module]:
-      export_hash = hash(export, x, y)
+      export_hash = hash(export, xor, start)
       if export_hash == proc_hash:
         if export != function:
           if report_failures:
@@ -59,33 +59,33 @@ def Main():
       "ws2_32.WSAStartup", "ws2_32.WSASocketA", "ws2_32.bind", 
       "ws2_32.listen", "ws2_32.accept"]
   if len(sys.argv) == 3:
-    x = ParseArg(sys.argv[1]);
-    y = ParseArg(sys.argv[2]);
-    print "--- %02X ---" % x
-    print "* %02X" % y
-    if CheckHashes(exports, procs, GetHash, x, y, True):
-      ReportHashes(procs, GetHash, x, y)
+    xor = ParseArg(sys.argv[1]);
+    start = ParseArg(sys.argv[2]);
+    print "--- %02X ---" % xor
+    print "* %02X" % start
+    if CheckHashes(exports, procs, GetHash, xor, start, True):
+      ReportHashes(procs, GetHash, xor, start)
   elif len(sys.argv) == 2:
     # Accept one argument: a decimal or hexadecimal number that is used by the
     # hashing algorithm:
-    x = ParseArg(sys.argv[1]);
-    print "--- %02X ---" % x
-    for y in range(0, 0x100):
-      if CheckHashes(exports, procs, GetHash, x, y, True):
-        print "* %02X" % y
-        ReportHashes(procs, GetHash, x, y)
+    xor = ParseArg(sys.argv[1]);
+    print "--- %02X ---" % xor
+    for start in range(0, 0x100):
+      if CheckHashes(exports, procs, GetHash, xor, start, True):
+        print "* %02X" % start
+        ReportHashes(procs, GetHash, xor, start)
   else:
     # If no argument is specified, search for all number that do not give
     # collisions:
-    for x in range(0, 0x100):
+    for xor in range(0, 0x100):
       bHeaderShown = False
-      print "--- %02X ---\r" % x,
-      for y in range(0, 0x100):
-        if CheckHashes(exports, procs, GetHash, x, y):
+      print "--- %02X ---\r" % xor,
+      for start in range(0, 0x100):
+        if CheckHashes(exports, procs, GetHash, xor, start):
           if (not bHeaderShown):
-            print "--- %02X ---" % x
+            print "--- %02X ---" % xor
             bHeaderShown = True
-          print "%02X " % y,
+          print "%02X " % start,
       if (bHeaderShown):
         print ""
 
