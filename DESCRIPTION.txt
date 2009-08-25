@@ -1,19 +1,5 @@
-Windows x86 null-free bindshell for Windows 5.0-6.0 all service packs.
-Based mainly on code and ideas (C) 2005 by Dafydd Stuttard, NGS Software.
+Windows x86 null-free bindshell for Windows 5.0-7.0 all service packs.
+(See http://skypher.com/wiki/index.php/Hacking/Shellcode/Bind/NGS).
+Based largely on code and ideas (C) 2005 by Dafydd Stuttard, NGS Software.
 (See http://www.ngssoftware.com/papers/WritingSmallShellcode.pdf).
 Thanks to Pete Beck.
-
-Features both in this and the original code:
-  + NULL Free
-  + Windows version and service pack independant.
-Improvements of this code over the original:
-  + No assumptions are made about the values of registers.
-  + "/3GB" compatible: pointers are not assume to be smaller than 0x80000000.
-  + DEP/ASLR compatible: data is not executed, code is not modified.
-  + Windows 7 compatible: kernel32 is found based on the length of its name.
-  + Stealth: does not display a console windows on the target machine when 
-    cmd.exe is executed.
-  + Allows an unlimited number of consecutive connections.
-  + Can except connections on almost any port. The range of acceptable port
-    numbers is only limited by the fact that the negative value of the port
-    number must not contain nulls.
