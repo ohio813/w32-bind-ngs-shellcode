@@ -49,6 +49,8 @@ offset_accept_in_hash_table             equ 6
 
 global _shellcode
 _shellcode:
+global shellcode
+shellcode:
 start:
     XOR     ECX, ECX                    ; ECX = 0
 ; Find base address of kernel32.dll. This code should work on Windows 5.0-7.0
