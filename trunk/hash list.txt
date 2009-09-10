@@ -1,0 +1,15 @@
+[modules]
+kernel32
+ws2_32
+[functions]
+kernel32!CreateProcessA
+kernel32!LoadLibraryA
+ws2_32!WSAStartup
+ws2_32!WSASocketA
+ws2_32!bind
+ws2_32!listen
+ws2_32!accept
+[hash function]
+XORSUB8F
+[collision level]
+module
